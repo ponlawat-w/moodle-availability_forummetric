@@ -1,0 +1,10 @@
+{
+  "name": "moodle-availability_forummetric-form",
+  "builds": {
+    "moodle-availability_forummetric-form": {
+      "jsfiles": [
+        "form.js"
+      ]
+    }
+  }
+}

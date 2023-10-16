@@ -18,7 +18,7 @@
  * Plugin version and other meta-data are defined here.
  *
  * @package     availability_forummetric
- * @copyright   2023 Your Name <you@example.com>
+ * @copyright   2023 Ponlawat Weerapanpisit <ponlawat_w@outlook.co.th>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'availability_forummetric';
 $plugin->release = '0.1.0';
-$plugin->version = 2023100900;
+$plugin->version = 2023101600;
 $plugin->requires = 2021051700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->dependencies = [

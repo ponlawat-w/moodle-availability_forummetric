@@ -15,15 +15,37 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * The firstclass test class.
+ * Forum metric frontend
  *
  * @package     availability_forummetric
- * @category    test
  * @copyright   2023 Ponlawat Weerapanpisit <ponlawat_w@outlook.co.th>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class availability_forummetric_firstclass_testcase extends advanced_testcase {
 
-    // Write the tests here as public funcions.
-    // Please refer to {@link https://docs.moodle.org/dev/PHPUnit} for more details on PHPUnit tests in Moodle.
+namespace availability_forummetric;
+
+defined('MOODLE_INTERNAL') or die();
+
+class frontend extends \core_availability\frontend {
+    protected function get_javascript_strings() {
+        return [
+            'allforums',
+            'lessthan',
+            'morethan',
+            'numreplies'
+        ];
+    }
+
+    protected function get_javascript_init_params($course, \cm_info $cm = null, \section_info $section = null) {
+        /**
+         * @var \moodle_daabase $DB
+         */
+        global $DB;
+        $forums = $DB->get_records('forum', ['course' => $course->id], 'name ASC, id ASC', 'id, name');
+        $arr = [];
+        foreach ($forums as $forum) {
+            $arr[] = $forum;
+        }
+        return [$arr];
+    }
 }

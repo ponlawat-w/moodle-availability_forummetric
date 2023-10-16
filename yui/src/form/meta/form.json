@@ -1,0 +1,9 @@
+{
+  "moodle-availability_forummetric-form": {
+    "requires": [
+      "base",
+      "node",
+      "moddle-core_availability-form"
+    ]
+  }
+}

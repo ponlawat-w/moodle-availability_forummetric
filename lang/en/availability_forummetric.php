@@ -19,10 +19,22 @@
  *
  * @package     availability_forummetric
  * @category    string
- * @copyright   2023 Your Name <you@example.com>
+ * @copyright   2023 Ponlawat Weerapanpisit <ponlawat_w@outlook.co.th>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Restriction by Forum Metric';
+$string['title'] = 'Forum Metric';
+$string['description'] = 'Allow only students who satisfy the specific metric value of forum modules in the course.';
+
+$string['availabilitydescription'] = '{$a->metric} in "{$a->forum}" must be {$a->condition} {$a->value}.';
+$string['notavailabilitydescription'] = '{$a->metric} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
+
+$string['allforums'] = 'All forums';
+
+$string['lessthan'] = 'less than';
+$string['morethan'] = 'more than';
+
+$string['numreplies'] = 'Number of replies';
