@@ -11,19 +11,24 @@ M.availability_forummetric = M.availability_forummetric || {};
  */
 M.availability_forummetric.form = Y.Object(M.core_availability.plugin);
 
-M.availability_forummetric.form.initInner = function(forums = []) {
-    this.forums = forums;
+M.availability_forummetric.form.initInner = function(metrics = [], forums = []) {
+    this.metrics = metrics.filter(x => x.metric && x.name);
+    this.forums = forums.filter(x => x.id && x.name);
 };
 
 M.availability_forummetric.form.getNode = function(json) {
     let html = '<span class="availability-forummetric">';
     html += '<select name="forum" class="form-control">';
     html += `<option value="0">${M.util.get_string('allforums', 'availability_forummetric')}</option>`;
-    for (const forum of this.forums) if (forum.id && forum.name) {
+    for (const forum of this.forums) {
         html += `<option value="${forum.id}">${forum.name}</option>`;
     }
     html += '</select>';
-    html += `<select name="metric" class="form-control"><option value="numreplies">${M.util.get_string('numreplies', 'availability_forummetric')}</option></select>`;
+    html += `<select name="metric" class="form-control">`;
+    for (const metric of this.metrics) {
+        html += `<option value="${metric.metric}">${metric.name}</option>`;
+    }
+    html += `</select>`;
     html += '<select name="condition" class="form-control">';
     html += `<option value="morethan">${M.util.get_string('morethan', 'availability_forummetric')}</option>`
     html += `<option value="lessthan">${M.util.get_string('lessthan', 'availability_forummetric')}</option>`
@@ -38,7 +43,7 @@ M.availability_forummetric.form.getNode = function(json) {
     const value = node.one('input[name=value]');
 
     if (forum) {
-        forum.set('value', json.forum ?? 'forum');
+        forum.set('value', json.forum ?? 0);
     }
     if (metric) {
         metric.set('value', json.metric ?? 'numreplies');

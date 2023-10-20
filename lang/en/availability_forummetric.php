@@ -29,6 +29,15 @@ $string['pluginname'] = 'Restriction by Forum Metric';
 $string['title'] = 'Forum Metric';
 $string['description'] = 'Allow only students who satisfy the specific metric value of forum modules in the course.';
 
+$string['engagement_method'] = 'Engagement Method';
+$string['engagement_method_help'] = '<p>Engagement Calculation Method</p><strong>Person-to-Person Engagement:</strong> The engagement level increases each time a user replies to the same user in the same thread.<br><strong>Thread Total Count Engagement:</strong> The engagement level increases each time a user participate in the same thread.<br><strong>Thread Engagement:</strong> The engagement level increases each time a user participates in a reply where they already participated in the parent posts.';
+$string['engagement_persontoperson'] = 'Maximum Engagement Level (Person-to-Person)';
+$string['engagement_persontoperson_description'] = 'The engagement level increases each time a user replies to the same user in the same thread.';
+$string['engagement_threadtotalcount'] = 'Maximum Engagement Level (Thread Total Count)';
+$string['engagement_threadtotalcount_description'] = 'The engagement level increases each time a user participate in the same thread.';
+$string['engagement_threadengagement'] = 'Maximum Engagement Level (Thread)';
+$string['engagement_threadengagement_description'] = 'The engagement level increases each time a user participates in a reply where they already participated in the parent posts.';
+
 $string['availabilitydescription'] = '{$a->metric} in "{$a->forum}" must be {$a->condition} {$a->value}.';
 $string['notavailabilitydescription'] = '{$a->metric} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
 
@@ -38,3 +47,4 @@ $string['lessthan'] = 'less than';
 $string['morethan'] = 'more than';
 
 $string['numreplies'] = 'Number of replies';
+$string['maxengagement'] = 'Maximum Engagement Level';

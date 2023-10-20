@@ -28,10 +28,13 @@ use stdClass;
 
 defined('MOODLE_INTERNAL') or die();
 
+include_once(__DIR__ . '/engagement.php');
+
 class condition extends \core_availability\condition {
     protected $valid = false;
     protected $forum = null;
     protected $metric = null;
+    protected $engagementmethod = null;
     protected $condition = null;
     protected $value = null;
 
@@ -49,6 +52,11 @@ class condition extends \core_availability\condition {
         }
         if (isset($structure->metric)) {
             $this->metric = $structure->metric;
+            if (str_starts_with($this->metric, 'maxengagement_')) {
+                $engagements = explode('_', $this->metric);
+                $this->metric = 'maxengagement';
+                $this->engagementmethod = (int)$engagements[1];
+            }
         }
         if (isset($structure->condition)) {
             $this->condition = $structure->condition;
@@ -141,6 +149,7 @@ class condition extends \core_availability\condition {
     protected function getuservalue($userid) {
         switch ($this->metric) {
             case 'numreplies': return $this->getnumreplies($userid);
+            case 'maxengagement': return $this->getmaxengagement($userid);
             default: return null;
         }
         return null;
@@ -153,13 +162,35 @@ class condition extends \core_availability\condition {
     protected function getnumreplies($userid) {
         /**
          * @var \moodle_database $DB
+         * @var \moodle_page $PAGE
          */
-        global $DB;
+        global $DB, $PAGE;
 
         $record = $DB->get_record_sql(
-            'SELECT COUNT(*) replies FROM {forum_posts} WHERE userid = ? AND parent > 0 AND (? = 0 OR discussion IN (SELECT id FROM {forum_discussions} WHERE forum = ?))',
-            [$userid, $this->forum, $this->forum]
+            'SELECT COUNT(*) replies FROM {forum_posts} WHERE userid = ? AND parent > 0 AND discussion IN ('
+            . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))'
+            . ')',
+            [$userid, $this->forum, $this->forum, $PAGE->course->id]
         );
         return $record ? $record->replies : null;
+    }
+
+    protected function getmaxengagement($userid) {
+        /**
+         * @var \moodle_database $DB
+         * @var \moodle_page $PAGE
+         */
+        global $DB, $PAGE;
+
+        $discussions = $DB->get_records_sql(
+            'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))',
+            [$this->forum, $this->forum, $PAGE->course->id]
+        );
+        $engagementresult = new engagementresult();
+        foreach ($discussions as $discussion) {
+            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id);
+            $engagementresult->add($engagement->calculate($userid));
+        }
+        return $engagementresult->getmax();
     }
 }

@@ -26,14 +26,30 @@ namespace availability_forummetric;
 
 defined('MOODLE_INTERNAL') or die();
 
+include_once(__DIR__ . '/engagement.php');
+
 class frontend extends \core_availability\frontend {
     protected function get_javascript_strings() {
         return [
             'allforums',
             'lessthan',
-            'morethan',
-            'numreplies'
+            'morethan'
         ];
+    }
+
+    /**
+     * @return array
+     */
+    protected function get_metricoptions() {
+        $options = [
+            ['metric' => 'numreplies', 'name' => get_string('numreplies', 'availability_forummetric')]
+        ];
+
+        foreach (engagement::getselectoptions() as $metric => $name) {
+            $options[] = ['metric' => 'maxengagement_' . $metric, 'name' => $name];
+        }
+
+        return $options;
     }
 
     protected function get_javascript_init_params($course, \cm_info $cm = null, \section_info $section = null) {
@@ -46,6 +62,6 @@ class frontend extends \core_availability\frontend {
         foreach ($forums as $forum) {
             $arr[] = $forum;
         }
-        return [$arr];
+        return [$this->get_metricoptions(), $arr];
     }
 }
