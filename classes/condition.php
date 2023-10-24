@@ -149,6 +149,7 @@ class condition extends \core_availability\condition {
     protected function getuservalue($userid) {
         switch ($this->metric) {
             case 'numreplies': return $this->getnumreplies($userid);
+            case 'numnationalities': return $this->getnumnationalities($userid);
             case 'maxengagement': return $this->getmaxengagement($userid);
             default: return null;
         }
@@ -175,6 +176,31 @@ class condition extends \core_availability\condition {
         return $record ? $record->replies : null;
     }
 
+    /**
+     * @param int $userid
+     * @return int|null
+     */
+    protected function getnumnationalities($userid) {
+        /**
+         * @var \moodle_database $DB
+         * @var \moodle_page $PAGE
+         */
+        global $DB, $PAGE;
+
+        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT country) countrycount FROM {user} WHERE id IN ('
+            . 'SELECT userid FROM {forum_posts} WHERE userid != ? AND discussion IN ('
+            . 'SELECT id FROM {forum_discussions} WHERE userid = ? AND forum = ? OR (0 = ? AND forum IN ('
+            . 'SELECT id FROM {forum} WHERE course = ?'
+            . '))))',
+            [$userid, $userid, $this->forum, $this->forum, $PAGE->course->id]
+        );
+        return $record ? $record->countrycount : null;
+    }
+
+    /**
+     * @param int $userid
+     * @return int
+     */
     protected function getmaxengagement($userid) {
         /**
          * @var \moodle_database $DB

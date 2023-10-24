@@ -42,7 +42,8 @@ class frontend extends \core_availability\frontend {
      */
     protected function get_metricoptions() {
         $options = [
-            ['metric' => 'numreplies', 'name' => get_string('numreplies', 'availability_forummetric')]
+            ['metric' => 'numreplies', 'name' => get_string('numreplies', 'availability_forummetric')],
+            ['metric' => 'numnationalities', 'name' => get_string('numnationalities', 'availability_forummetric')]
         ];
 
         foreach (engagement::getselectoptions() as $metric => $name) {

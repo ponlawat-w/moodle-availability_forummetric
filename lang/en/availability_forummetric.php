@@ -47,4 +47,5 @@ $string['lessthan'] = 'less than';
 $string['morethan'] = 'more than';
 
 $string['numreplies'] = 'Number of replies';
+$string['numnationalities'] = 'Number of nationalities engaged';
 $string['maxengagement'] = 'Maximum Engagement Level';
