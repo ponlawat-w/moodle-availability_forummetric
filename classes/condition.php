@@ -150,6 +150,7 @@ class condition extends \core_availability\condition {
         switch ($this->metric) {
             case 'numreplies': return $this->getnumreplies($userid);
             case 'numnationalities': return $this->getnumnationalities($userid);
+            case 'uniquedaysactive': return $this->getuniquedaysactive($userid);
             case 'maxengagement': return $this->getmaxengagement($userid);
             default: return null;
         }
@@ -195,6 +196,25 @@ class condition extends \core_availability\condition {
             [$userid, $userid, $this->forum, $this->forum, $PAGE->course->id]
         );
         return $record ? $record->countrycount : null;
+    }
+
+    /**
+     * @param int $userid
+     * @return int|null
+     */
+    protected function getuniquedaysactive($userid) {
+        /**
+         * @var \moodle_database $DB
+         * @var \moodle_page $PAGE
+         */
+        global $DB, $PAGE;
+
+        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT created - (created % 86400)) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
+            . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN ('
+            . 'SELECT id FROM {forum} WHERE course = ?'
+            . ')))',
+            [$userid, $this->forum, $this->forum, $PAGE->course->id]);
+        return $record ? $record->uniquedaysactivecount : null;
     }
 
     /**
