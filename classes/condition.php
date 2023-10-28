@@ -73,7 +73,7 @@ class condition extends \core_availability\condition {
      * according to this availability condition.
      *
      * @param bool $not Set true if we are inverting the condition
-     * @param info $info Item we're checking
+     * @param \core_availability\info $info Item we're checking
      * @param bool $grabthelot Performance hint: if true, caches information
      *   required for all course-modules, to make the front page and similar
      *   pages work more quickly (works only for current user)
@@ -82,7 +82,7 @@ class condition extends \core_availability\condition {
      */
     public function is_available($not, \core_availability\info $info, $grabthelot, $userid) {
         if (!$this->valid) return false;
-        $uservalue = $this->getuservalue($userid);
+        $uservalue = $this->getuservalue($userid, $info);
         if (is_null($uservalue)) return false;
         $satisfies = false;
         switch ($this->condition) {
@@ -144,14 +144,15 @@ class condition extends \core_availability\condition {
 
     /**
      * @param int $userid
+     * @param \core_availability\info $info
      * @return int|null
      */
-    protected function getuservalue($userid) {
+    public function getuservalue($userid, \core_availability\info $info) {
         switch ($this->metric) {
-            case 'numreplies': return $this->getnumreplies($userid);
-            case 'numnationalities': return $this->getnumnationalities($userid);
-            case 'uniquedaysactive': return $this->getuniquedaysactive($userid);
-            case 'maxengagement': return $this->getmaxengagement($userid);
+            case 'numreplies': return $this->getnumreplies($userid, $info);
+            case 'numnationalities': return $this->getnumnationalities($userid, $info);
+            case 'uniquedaysactive': return $this->getuniquedaysactive($userid, $info);
+            case 'maxengagement': return $this->getmaxengagement($userid, $info);
             default: return null;
         }
         return null;
@@ -159,84 +160,78 @@ class condition extends \core_availability\condition {
 
     /**
      * @param int $userid
+     * @param \core_availability\info $info
      * @return int|null
      */
-    protected function getnumreplies($userid) {
-        /**
-         * @var \moodle_database $DB
-         * @var \moodle_page $PAGE
-         */
-        global $DB, $PAGE;
+    protected function getnumreplies($userid, \core_availability\info $info) {
+        /** @var \moodle_database $DB */
+        global $DB;
 
         $record = $DB->get_record_sql(
             'SELECT COUNT(*) replies FROM {forum_posts} WHERE userid = ? AND parent > 0 AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))'
             . ')',
-            [$userid, $this->forum, $this->forum, $PAGE->course->id]
+            [$userid, $this->forum, $this->forum, $info->get_course()->id]
         );
         return $record ? $record->replies : null;
     }
 
     /**
      * @param int $userid
+     * @param \core_availability\info $info
      * @return int|null
      */
-    protected function getnumnationalities($userid) {
-        /**
-         * @var \moodle_database $DB
-         * @var \moodle_page $PAGE
-         */
-        global $DB, $PAGE;
+    protected function getnumnationalities($userid, \core_availability\info $info) {
+        /** @var \moodle_database $DB */
+        global $DB;
 
         $record = $DB->get_record_sql('SELECT COUNT(DISTINCT country) countrycount FROM {user} WHERE id IN ('
             . 'SELECT userid FROM {forum_posts} WHERE userid != ? AND discussion IN ('
-            . 'SELECT id FROM {forum_discussions} WHERE userid = ? AND forum = ? OR (0 = ? AND forum IN ('
+            . 'SELECT id FROM {forum_discussions} fd WHERE (fd.forum = ? OR (0 = ? AND fd.forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
-            . '))))',
-            [$userid, $userid, $this->forum, $this->forum, $PAGE->course->id]
-        );
+            . '))) AND EXISTS ('
+            . 'SELECT 1 FROM {forum_posts} fp WHERE fp.discussion = fd.id AND fp.userid = ?'
+            . ')))', [$userid, $this->forum, $this->forum, $info->get_course()->id, $userid]
+    );
         return $record ? $record->countrycount : null;
     }
 
     /**
      * @param int $userid
+     * @param \core_availability\info $info
      * @return int|null
      */
-    protected function getuniquedaysactive($userid) {
-        /**
-         * @var \moodle_database $DB
-         * @var \moodle_page $PAGE
-         */
-        global $DB, $PAGE;
+    protected function getuniquedaysactive($userid, \core_availability\info $info) {
+        /** @var \moodle_database $DB */
+        global $DB;
 
-        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT created - (created % 86400)) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
+        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
             . ')))',
-            [$userid, $this->forum, $this->forum, $PAGE->course->id]);
+            [$userid, $this->forum, $this->forum, $info->get_course()->id]);
         return $record ? $record->uniquedaysactivecount : null;
     }
 
     /**
      * @param int $userid
+     * @param \core_availability\info $info
      * @return int
      */
-    protected function getmaxengagement($userid) {
-        /**
-         * @var \moodle_database $DB
-         * @var \moodle_page $PAGE
-         */
-        global $DB, $PAGE;
+    protected function getmaxengagement($userid, \core_availability\info $info) {
+        /** @var \moodle_database $DB */
+        global $DB;
 
         $discussions = $DB->get_records_sql(
             'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))',
-            [$this->forum, $this->forum, $PAGE->course->id]
+            [$this->forum, $this->forum, $info->get_course()->id]
         );
         $engagementresult = new engagementresult();
         foreach ($discussions as $discussion) {
             $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id);
             $engagementresult->add($engagement->calculate($userid));
         }
-        return $engagementresult->getmax();
+        $max = $engagementresult->getmax();
+        return $max ? $max : 0;
     }
 }
