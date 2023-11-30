@@ -1,8 +1,6 @@
 # Restriction by Forum Metric #
 
-TODO Describe the plugin shortly here.
-
-TODO Provide more detailed description here.
+Using students' metrics from forum modules to restrict access of other modules in the course.
 
 ## Installing via uploaded ZIP file ##
 
@@ -29,7 +27,7 @@ to complete the installation from the command line.
 
 ## License ##
 
-2023 Your Name <you@example.com>
+2023 Ponlawat WEERAPANPISIT <ponlawat_w@outlook.co.th>
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
