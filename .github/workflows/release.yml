@@ -1,0 +1,58 @@
+name: Plugin Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      accessibility-branch: ${{ github.ref }}
+
+  get-version:
+    name: Get version info
+    uses: ./.github/workflows/get-version.yml
+
+  push-branches:
+    name: Push to release branches
+    needs: [ci, get-version]
+    outputs:
+      release: ${{ needs.get-version.outputs.plugin-release }}
+      version: ${{ needs.get-version.outputs.plugin-version }}
+      branch: ${{ needs.get-version.outputs.branch-name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Push to release branch (without default widgets)
+        run: |
+          git checkout -b ${{ needs.get-version.outputs.branch-name }}
+          git push -f -u origin ${{ needs.get-version.outputs.branch-name }}
+
+  release:
+    needs: push-branches
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.push-branches.outputs.branch }}
+      - name: Publish Tag
+        run: |
+          git config --global user.name "ponlawat-w"
+          git config --global user.email "ponlawat_w@outlook.co.th"
+          git tag -fa ${{ needs.push-branches.outputs.release }} -m "${{ needs.push-branches.outputs.release }} - ${{ needs.push-branches.outputs.version }}"
+          git push --force origin ${{ needs.push-branches.outputs.release }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.push-branches.outputs.release }}
+          name: ${{ needs.push-branches.outputs.release }}
+          body: ${{ needs.push-branches.outputs.release }} - ${{ needs.push-branches.outputs.version }}
