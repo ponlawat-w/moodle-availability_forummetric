@@ -14,6 +14,17 @@ M.availability_forummetric.form.initInner = function(metrics = [], forums = []) 
     this.forums = forums.filter(x => x.id && x.name);
 };
 
+function getdateinput(name) {
+    let html = '<div><label>';
+    html += `<input type="checkbox" name="enable${name}"> ${M.util.get_string(name, 'availability_forummetric')}`;
+    html += '<span class="ml-2">'
+    html += `<input type="date" class="form-control" name="${name}_date">`
+    html += `<input type="time" class="form-control" name="${name}_time">`
+    html += '</span>'
+    html += '</label></div>';
+    return html;
+}
+
 M.availability_forummetric.form.getNode = function(json) {
     let html = '<span class="availability-forummetric">';
     html += '<select name="forum" class="form-control">';
@@ -32,6 +43,8 @@ M.availability_forummetric.form.getNode = function(json) {
     html += `<option value="lessthan">${M.util.get_string('lessthan', 'availability_forummetric')}</option>`
     html += '</select>';
     html += '<input type="number" name="value" class="form-control" min="0">'
+    html += getdateinput('startdate');
+    html += getdateinput('enddate');
     html += '</span>';
     const node = Y.Node.create(`<span class="form-inline">${html}</span>`);
 

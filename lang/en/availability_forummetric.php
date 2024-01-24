@@ -45,6 +45,8 @@ $string['allforums'] = 'All forums';
 
 $string['lessthan'] = 'less than';
 $string['morethan'] = 'more than';
+$string['startdate'] = 'Start date';
+$string['enddate'] = 'End date';
 
 $string['numreplies'] = 'Number of replies';
 $string['numnationalities'] = 'Number of nationalities engaged';
