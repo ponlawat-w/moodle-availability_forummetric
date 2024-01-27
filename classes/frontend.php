@@ -34,8 +34,8 @@ class frontend extends \core_availability\frontend {
             'allforums',
             'lessthan',
             'morethan',
-            'startdate',
-            'enddate'
+            'fromdate',
+            'todate'
         ];
     }
 

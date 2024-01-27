@@ -114,11 +114,19 @@ class condition extends \core_availability\condition {
          * @var \moodle_database $DB
          */
         global $DB;
-        return get_string($not ? 'notavailabilitydescription' : 'availabilitydescription', 'availability_forummetric', [
+        $datetype = '';
+        if (!is_null($this->fromdate) && is_null($this->todate)) $datetype = 'from';
+        else if (is_null($this->fromdate) && !is_null($this->todate)) $datetype = 'to';
+        else if (!is_null($this->fromdate) && !is_null($this->todate)) $datetype = 'between';
+        $strname = ($not ? 'notavailabilitydescription' : 'availabilitydescription') . $datetype;
+
+        return get_string($strname, 'availability_forummetric', [
             'metric' => get_string($this->metric, 'availability_forummetric'),
             'forum' => $this->forum > 0 ? $DB->get_record('forum', ['id' => $this->forum], 'name')->name : get_string('allforums', 'availability_forummetric'),
             'condition' => get_string($this->condition, 'availability_forummetric'),
-            'value' => $this->value
+            'value' => $this->value,
+            'from' => is_null($this->fromdate) ? 'N/A' : userdate($this->fromdate),
+            'to' => is_null($this->todate) ? 'N/A' : userdate($this->todate)
         ]);
     }
 

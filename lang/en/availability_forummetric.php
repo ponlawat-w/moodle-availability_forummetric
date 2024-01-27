@@ -39,14 +39,20 @@ $string['engagement_threadengagement'] = 'Maximum Engagement Level (Thread)';
 $string['engagement_threadengagement_description'] = 'The engagement level increases each time a user participates in a reply where they already participated in the parent posts.';
 
 $string['availabilitydescription'] = '{$a->metric} in "{$a->forum}" must be {$a->condition} {$a->value}.';
+$string['availabilitydescriptionfrom'] = '{$a->metric} from {$a->from} in "{$a->forum}" must be {$a->condition} {$a->value}.';
+$string['availabilitydescriptionto'] = '{$a->metric} to {$a->to} in "{$a->forum}" must be {$a->condition} {$a->value}.';
+$string['availabilitydescriptionbetween'] = '{$a->metric} between {$a->from} and {$a->to} in "{$a->forum}" must be {$a->condition} {$a->value}.';
 $string['notavailabilitydescription'] = '{$a->metric} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
+$string['notavailabilitydescriptionfrom'] = '{$a->metric} from {$a->from} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
+$string['notavailabilitydescriptionto'] = '{$a->metric} to {$a->to} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
+$string['notavailabilitydescriptionbetween'] = '{$a->metric} between {$a->from} and {$a->to} in "{$a->forum}" must not be {$a->condition} {$a->value}.';
 
 $string['allforums'] = 'All forums';
 
 $string['lessthan'] = 'less than';
 $string['morethan'] = 'more than';
-$string['startdate'] = 'Start date';
-$string['enddate'] = 'End date';
+$string['fromdate'] = 'Start date';
+$string['todate'] = 'To date';
 
 $string['numreplies'] = 'Number of replies';
 $string['numnationalities'] = 'Number of nationalities engaged';
