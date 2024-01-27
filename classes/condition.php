@@ -37,6 +37,8 @@ class condition extends \core_availability\condition {
     protected $engagementmethod = null;
     protected $condition = null;
     protected $value = null;
+    protected $fromdate = null;
+    protected $todate = null;
 
     /**
      * Constructor
@@ -64,6 +66,8 @@ class condition extends \core_availability\condition {
         if (isset($structure->value)) {
             $this->value = $structure->value;
         }
+        $this->fromdate = isset($structure->fromdate) ? $structure->fromdate : null;
+        $this->todate = isset($structure->todate) ? $structure->todate : null;
 
         $this->valid = !is_null($this->forum) && !is_null($this->metric) && !is_null($this->condition) && !is_null($this->value);
     }
@@ -159,6 +163,24 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get date range SQL
+     *
+     * @return array{ 0: string, 1: int[] }
+     */
+    protected function getdaterangesql() {
+        if (is_null($this->fromdate) && is_null($this->todate)) {
+            return ['TRUE', []];
+        }
+        if (!is_null($this->fromdate) && is_null($this->todate)) {
+            return ['created >= ?', [$this->fromdate]];
+        }
+        if (is_null($this->fromdate) && !is_null($this->todate)) {
+            return ['created <= ?', [$this->todate]];
+        }
+        return ['created BETWEEN ? AND ?', [$this->fromdate, $this->todate]];
+    }
+
+    /**
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
@@ -167,11 +189,13 @@ class condition extends \core_availability\condition {
         /** @var \moodle_database $DB */
         global $DB;
 
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
+
         $record = $DB->get_record_sql(
             'SELECT COUNT(*) replies FROM {forum_posts} WHERE userid = ? AND parent > 0 AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))'
-            . ')',
-            [$userid, $this->forum, $this->forum, $info->get_course()->id]
+            . ') AND ' . $daterangesql,
+            array_merge([$userid, $this->forum, $this->forum, $info->get_course()->id], $daterangeparams)
         );
         return $record ? $record->replies : null;
     }
@@ -185,14 +209,17 @@ class condition extends \core_availability\condition {
         /** @var \moodle_database $DB */
         global $DB;
 
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
+
         $record = $DB->get_record_sql('SELECT COUNT(DISTINCT country) countrycount FROM {user} WHERE id IN ('
-            . 'SELECT userid FROM {forum_posts} WHERE userid != ? AND discussion IN ('
+            . "SELECT userid FROM {forum_posts} WHERE userid != ? AND {$daterangesql} AND discussion IN ("
             . 'SELECT id FROM {forum_discussions} fd WHERE (fd.forum = ? OR (0 = ? AND fd.forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
             . '))) AND EXISTS ('
             . 'SELECT 1 FROM {forum_posts} fp WHERE fp.discussion = fd.id AND fp.userid = ?'
-            . ')))', [$userid, $this->forum, $this->forum, $info->get_course()->id, $userid]
-    );
+            . ')))',
+            array_merge([$userid], $daterangeparams, [$this->forum, $this->forum, $info->get_course()->id, $userid])
+        );
         return $record ? $record->countrycount : null;
     }
 
@@ -205,11 +232,14 @@ class condition extends \core_availability\condition {
         /** @var \moodle_database $DB */
         global $DB;
 
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
+
         $record = $DB->get_record_sql('SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
-            . ')))',
-            [$userid, $this->forum, $this->forum, $info->get_course()->id]);
+            . '))) AND ' . $daterangesql,
+            array_merge([$userid, $this->forum, $this->forum, $info->get_course()->id], $daterangeparams)
+        );
         return $record ? $record->uniquedaysactivecount : null;
     }
 
@@ -222,13 +252,16 @@ class condition extends \core_availability\condition {
         /** @var \moodle_database $DB */
         global $DB;
 
+        $startdate = is_null($this->fromdate) ? $this->fromdate : 0;
+        $enddate = is_null($this->todate) ? $this->todate : 0;
+
         $discussions = $DB->get_records_sql(
             'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))',
             [$this->forum, $this->forum, $info->get_course()->id]
         );
         $engagementresult = new engagementresult();
         foreach ($discussions as $discussion) {
-            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id);
+            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id, $startdate, $enddate);
             $engagementresult->add($engagement->calculate($userid));
         }
         $max = $engagementresult->getmax();

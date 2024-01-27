@@ -98,7 +98,7 @@ class daterange_test extends \advanced_testcase {
             'metric' => 'numreplies',
             'condition' => 'morethan',
             'value' => 0,
-            'frondate' => mktime(7, 0, 0, 1, 27, 2024),
+            'fromdate' => mktime(7, 0, 0, 1, 27, 2024),
             'todate' => mktime(9, 0, 0, 1, 27, 2024)
         ]);
         $this->assertEquals(1, $condition_range->getuservalue($replyuser->id, $info));
