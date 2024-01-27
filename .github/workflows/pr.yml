@@ -11,8 +11,6 @@ jobs:
   ci:
     name: CI
     uses: ./.github/workflows/ci.yml
-    with:
-      accessibility-branch: ${{ github.ref }}
   pr-ci-finished:
     name: PR CI Finished
     needs: ci
