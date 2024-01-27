@@ -78,7 +78,11 @@ class daterange_test extends \advanced_testcase {
             'metric' => 'numreplies',
             'condition' => 'morethan',
             'value' => 0,
-            'fromdate' => mktime(0, 0, 0, 1, 27, 2024)
+            'fromdate' => (object)[
+                'enabled' => true,
+                'date' => '2024-01-27',
+                'time' => '00:00:00'
+            ]
         ]);
         $this->assertEquals(2, $condition_from->getuservalue($replyuser->id, $info));
 
@@ -88,7 +92,11 @@ class daterange_test extends \advanced_testcase {
             'metric' => 'numreplies',
             'condition' => 'morethan',
             'value' => 0,
-            'todate' => mktime(23, 59, 59, 1, 26, 2024)
+            'todate' => (object)[
+                'enabled' => true,
+                'date' => '2024-01-26',
+                'time' => '23:59:59'
+            ]
         ]);
         $this->assertEquals(1, $condition_to->getuservalue($replyuser->id, $info));
 
@@ -98,8 +106,16 @@ class daterange_test extends \advanced_testcase {
             'metric' => 'numreplies',
             'condition' => 'morethan',
             'value' => 0,
-            'fromdate' => mktime(7, 0, 0, 1, 27, 2024),
-            'todate' => mktime(9, 0, 0, 1, 27, 2024)
+            'fromdate' => (object)[
+                'enabled' => true,
+                'date' => '2024-01-27',
+                'time' => '07:00:00'
+            ],
+            'todate' => (object)[
+                'enabled' => true,
+                'date' => '2024-01-27',
+                'time' => '09:00:00'
+            ]
         ]);
         $this->assertEquals(1, $condition_range->getuservalue($replyuser->id, $info));
     }

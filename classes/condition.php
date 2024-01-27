@@ -24,6 +24,7 @@
 
 namespace availability_forummetric;
 
+use core_date;
 use stdClass;
 
 defined('MOODLE_INTERNAL') or die();
@@ -66,8 +67,8 @@ class condition extends \core_availability\condition {
         if (isset($structure->value)) {
             $this->value = $structure->value;
         }
-        $this->fromdate = isset($structure->fromdate) ? $structure->fromdate : null;
-        $this->todate = isset($structure->todate) ? $structure->todate : null;
+        $this->fromdate = isset($structure->fromdate) && !is_null($structure->fromdate) ? $this->get_structure_timestamp($structure->fromdate) : null;
+        $this->todate = isset($structure->todate) && !is_null($structure->todate) ? $this->get_structure_timestamp($structure->todate) : null;
 
         $this->valid = !is_null($this->forum) && !is_null($this->metric) && !is_null($this->condition) && !is_null($this->value);
     }
@@ -129,6 +130,22 @@ class condition extends \core_availability\condition {
      */
     protected function get_debug_string() {
         return 'DEBUG';
+    }
+
+    /**
+     * Get structure timestamp
+     *
+     * @param \stdClass $obj
+     * @return int|null
+     */
+    protected function get_structure_timestamp($obj) {
+        if (!isset($obj->enabled) || is_null($obj->enabled) || !$obj->enabled) return null;
+        if (!isset($obj->date) || is_null($obj->date)) return null;
+        $date = $obj->date;
+        $time = isset($obj->time) && !is_null($obj->time) ? $obj->time : '00:00:00';
+
+        $dt = new \DateTime($date . ' ' . $time, core_date::get_user_timezone_object());
+        return $dt->getTimestamp();
     }
 
     /**
