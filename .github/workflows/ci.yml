@@ -76,6 +76,12 @@ jobs:
           # If you try to use code coverage with "none", it will fallback to phpdbg (which has known problems).
           coverage: none
 
+      - name: Checkout Plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+          ref: ${{ github.ref }}
+
       - name: Initialise moodle-plugin-ci
         shell: bash
         run: |
