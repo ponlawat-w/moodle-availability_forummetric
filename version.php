@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'availability_forummetric';
-$plugin->release = '0.2.0';
-$plugin->version = 2024012700;
+$plugin->release = '0.2.1';
+$plugin->version = 2024021100;
 $plugin->requires = 2021051700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->dependencies = [
