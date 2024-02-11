@@ -31,6 +31,8 @@ require_once(__DIR__ . '/../classes/engagement.php');
  */
 class condition_test extends \advanced_testcase {
     /**
+     * Get forum mocking generator.
+     *
      * @return \mod_forum_generator
      */
     private function getforumgenerator() {
@@ -126,6 +128,8 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
+     * Get course.
+     *
      * @return stdClass
      */
     protected function getcourse() {
@@ -136,7 +140,7 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
-     * [username => userid]
+     * Get username dict in the array of: [username => userid].
      *
      * @return array
      */
@@ -153,7 +157,7 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
-     * [forumname => forumid]
+     * Get forum dict in the array of: [forumname => forumid].
      *
      * @return array
      */
@@ -170,14 +174,14 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
-     * @param string $title
-     * @param stdClass $course
-     * @param int $forum
-     * @param int $userid
-     * @param string $metric
-     * @param int $value
-     * @param string $engagementmethod
-     * @return void
+     * Assert metric value value.
+     *
+     * @param string $title Assert title.
+     * @param stdClass $course Course object.
+     * @param int $forum Forum ID.
+     * @param int $userid User ID.
+     * @param string $metric Metric to test.
+     * @param int $value Expected value.
      */
     protected function assertmetricvalueequals($title, $course, $forumid, $userid, $metric, $value) {
         $info = new \core_availability\mock_info($course, $userid);
@@ -208,6 +212,8 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
+     * Test number of replies.
+     *
      * @covers \availability_forummetric\condition::is_availables
      */
     public function test_numreplies() {
@@ -247,6 +253,8 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
+     * Test number of nationalities.
+     *
      * @covers \availability_forummetric\condition::is_availables
      */
     public function test_numnationalities() {
@@ -286,6 +294,8 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
+     * Test number of unique active days.
+     *
      * @covers \availability_forummetric\condition::is_availables
      */
     public function test_uniquedaysactive() {
@@ -325,6 +335,8 @@ class condition_test extends \advanced_testcase {
     }
 
     /**
+     * Test engagement value.
+     *
      * @covers \availability_forummetric\condition::is_availables
      */
     public function test_engagement() {

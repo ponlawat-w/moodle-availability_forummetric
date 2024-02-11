@@ -31,14 +31,27 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/engagement.php');
 
+/**
+ * Forum metric availability condition.
+ *
+ * Module availability by metric values from forum modules.
+ */
 class condition extends \core_availability\condition {
+    /** @var bool $valid Is valid. */
     protected $valid = false;
+    /** @var int $forum Forum ID to be source of conditional value. */
     protected $forum = null;
+    /** @var string $metric Metric name. */
     protected $metric = null;
+    /** @var string $engagementmethod Engagement method. */
     protected $engagementmethod = null;
+    /** @var string $condition Checking condition. */
     protected $condition = null;
+    /** @var string $value Required value. */
     protected $value = null;
+    /** @var int|null $fromdate Timestamp of the start date. */
     protected $fromdate = null;
+    /** @var int|null $to Timestamp of the end date. */
     protected $todate = null;
 
     /**
@@ -191,6 +204,8 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get user's value.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
@@ -230,6 +245,8 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get number of replies.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
@@ -251,6 +268,8 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get number of nationalities.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
@@ -275,6 +294,8 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get number of unique active days.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
@@ -298,6 +319,8 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get number of maximum engagement.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int

@@ -31,6 +31,8 @@ require_once(__DIR__ . '/../../../tests/fixtures/mock_info.php');
 class daterange_test extends \advanced_testcase {
 
     /**
+     * Test daterange.
+     *
      * @covers \availability_forummetric\condition::is_availables
      */
     public function test_daterage() {

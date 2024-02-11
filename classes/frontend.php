@@ -28,7 +28,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/engagement.php');
 
+/**
+ * Forum Metric Availability Frontend.
+ */
 class frontend extends \core_availability\frontend {
+    /**
+     * Get js strings.
+     *
+     * @return string[]
+     */
     protected function get_javascript_strings() {
         return [
             'allforums',
@@ -40,6 +48,8 @@ class frontend extends \core_availability\frontend {
     }
 
     /**
+     * Get metric options.
+     *
      * @return array
      */
     protected function get_metricoptions() {
@@ -56,6 +66,14 @@ class frontend extends \core_availability\frontend {
         return $options;
     }
 
+    /**
+     * Get JS init parameters.
+     *
+     * @param stdClass $course
+     * @param \cm_info|null $cm
+     * @param \section_info|null $section
+     * @return array
+     */
     protected function get_javascript_init_params($course, \cm_info $cm = null, \section_info $section = null) {
         global $DB;
         /** @var \moodle_daabase $DB */
