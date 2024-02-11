@@ -129,6 +129,8 @@ class engagement {
      * Add options to form.
      *
      * @param MoodleQuickForm $mform
+     * @param string $elementname
+     * @param int $defaultvalue
      */
     public static function addtoform($mform, $elementname = 'engagementmethod', $defaultvalue = null) {
         $mform->addElement(
@@ -206,7 +208,7 @@ class engagementresult {
     /**
      * Get engagement value of level.
      *
-     * @param int $level.
+     * @param int $level
      * @return int
      */
     public function getlevel($level) {

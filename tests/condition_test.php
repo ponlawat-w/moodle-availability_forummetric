@@ -178,7 +178,7 @@ class condition_test extends \advanced_testcase {
      *
      * @param string $title Assert title.
      * @param stdClass $course Course object.
-     * @param int $forum Forum ID.
+     * @param int $forumid Forum ID.
      * @param int $userid User ID.
      * @param string $metric Metric to test.
      * @param int $value Expected value.
