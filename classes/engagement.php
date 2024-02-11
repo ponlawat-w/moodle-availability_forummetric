@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Forum metric engagement tool.
+ *
+ * @package     availability_forummetric
+ * @copyright   2023 Ponlawat Weerapanpisit <ponlawat_w@outlook.co.th>
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace availability_forummetric;
 
 defined('MOODLE_INTERNAL') || die;
@@ -22,13 +30,17 @@ defined('MOODLE_INTERNAL') || die;
  * Class for engagement calculation methods
  */
 class engagement {
+    /** @var string Component. */
     private const COMPONENT = 'availability_forummetric';
+    /** @var int Engagement method person-to-person. */
     public const PERSON_TO_PERSON = 1;
+    /** @var int Engagement method thread total count.  */
     public const THREAD_TOTAL_COUNT = 2;
+    /** @var int Engagement method thread engagement.  */
     public const THREAD_ENGAGEMENT = 3;
 
     /**
-     * Get string of calculation method
+     * Get string of calculation method.
      *
      * @param string $method
      * @param string $suffix
@@ -36,15 +48,18 @@ class engagement {
      */
     private static function getstring($method, $suffix = '') {
         switch ($method) {
-            case static::PERSON_TO_PERSON: return get_string('engagement_persontoperson' . $suffix, static::COMPONENT);
-            case static::THREAD_TOTAL_COUNT: return get_string('engagement_threadtotalcount' . $suffix, static::COMPONENT);
-            case static::THREAD_ENGAGEMENT: return get_string('engagement_threadengagement' . $suffix, static::COMPONENT);
+            case static::PERSON_TO_PERSON:
+                return get_string('engagement_persontoperson' . $suffix, static::COMPONENT);
+            case static::THREAD_TOTAL_COUNT:
+                return get_string('engagement_threadtotalcount' . $suffix, static::COMPONENT);
+            case static::THREAD_ENGAGEMENT:
+                return get_string('engagement_threadengagement' . $suffix, static::COMPONENT);
         }
         throw new \moodle_exception('Invalid method');
     }
 
     /**
-     * Get calculator function
+     * Get calculator function.
      *
      * @param int $method
      * @param int $discussionid
@@ -54,15 +69,18 @@ class engagement {
      */
     public static function getinstancefrommethod($method, $discussionid, $starttime = 0, $endtime = 0) {
         switch ($method) {
-            case static::PERSON_TO_PERSON: return new p2pengagement($discussionid, $starttime, $endtime);
-            case static::THREAD_TOTAL_COUNT: return new threadcountengagement($discussionid, $starttime, $endtime);
-            case static::THREAD_ENGAGEMENT: return new threadengagement($discussionid, $starttime, $endtime);
+            case static::PERSON_TO_PERSON:
+                return new p2pengagement($discussionid, $starttime, $endtime);
+            case static::THREAD_TOTAL_COUNT:
+                return new threadcountengagement($discussionid, $starttime, $endtime);
+            case static::THREAD_ENGAGEMENT:
+                return new threadengagement($discussionid, $starttime, $endtime);
         }
         throw new \moodle_exception('Invalid method');
     }
 
     /**
-     * Get calculation method name
+     * Get calculation method name.
      *
      * @param string $method
      * @return string
@@ -72,7 +90,7 @@ class engagement {
     }
 
     /**
-     * Get calculation method description
+     * Get calculation method description.
      *
      * @param string $method
      * @return string
@@ -82,7 +100,7 @@ class engagement {
     }
 
     /**
-     * Get all available engagement calculation methods
+     * Get all available engagement calculation methods.
      *
      * @return int[]
      */
@@ -90,12 +108,12 @@ class engagement {
         return [
             static::PERSON_TO_PERSON,
             static::THREAD_TOTAL_COUNT,
-            static::THREAD_ENGAGEMENT
+            static::THREAD_ENGAGEMENT,
         ];
     }
 
     /**
-     * Get select options for form
+     * Get select options for form.
      *
      * @return array
      */
@@ -108,13 +126,19 @@ class engagement {
     }
 
     /**
-     * Add options to form
+     * Add options to form.
      *
      * @param MoodleQuickForm $mform
+     * @param string $elementname
+     * @param int $defaultvalue
      */
     public static function addtoform($mform, $elementname = 'engagementmethod', $defaultvalue = null) {
-        $mform->addElement('select', $elementname, get_string('engagement_method', static::COMPONENT), engagement::getselectoptions());
-        $mform->addHelpButton($elementname, 'engagement_method', static::COMPONENT);
+        $mform->addElement(
+            'select', $elementname,
+            get_string('engagement_method', self::COMPONENT),
+            self::getselectoptions()
+        );
+        $mform->addHelpButton($elementname, 'engagement_method', self::COMPONENT);
         if (is_null($defaultvalue)) {
             $defaultvalue = get_config(static::COMPONENT, 'defaultengagementmethod');
         }
@@ -123,27 +147,25 @@ class engagement {
 }
 
 /**
- * A forum post
+ * A forum post.
  */
 class engagedpost {
+    /** @var int $id Post ID. */
     public $id;
+    /** @var int $discussion Discussion ID. */
     public $discussion;
+    /** @var int $parent Parent post ID. */
     public $parent;
+    /** @var int $userid User ID. */
     public $userid;
+    /** @var int $created Created timestamp. */
     public $created;
-    /**
-     * True if post satisfies time condition
-     *
-     * @var bool
-     */
+    /** @var bool $statisfiestime True if post satisfies time condition. */
     public $satisfiestime;
-    /**
-     * Children posts
-     *
-     * @var engagedpost[]
-     */
+    /** @var engagedpost[] $children Children posts */
     public $children;
 
+    /** @var string Out fields when getting posts. */
     public const DB_OUT_FIELDS = 'id,discussion,parent,userid,created';
 }
 
@@ -152,12 +174,14 @@ class engagedpost {
  */
 class engagementresult {
     /**
+     * Array [e1, e2, e3, e4].
+     *
      * @var int[]
      */
     public $levels = [];
 
     /**
-     * Increase level value by given amount or default to be 1
+     * Increase level value by given amount or default to be 1.
      *
      * @param int $level
      * @param int $amount
@@ -171,7 +195,7 @@ class engagementresult {
     }
 
     /**
-     * Add another result to this result
+     * Add another result to this result.
      *
      * @param engagementresult $result
      */
@@ -182,6 +206,8 @@ class engagementresult {
     }
 
     /**
+     * Get engagement value of level.
+     *
      * @param int $level
      * @return int
      */
@@ -190,27 +216,35 @@ class engagementresult {
     }
 
     /**
+     * Get engagement level 1.
+     *
      * @return int
      */
     public function getl1() {
         return $this->getlevel(1);
     }
-    
+
     /**
+     * Get engagement level 2.
+     *
      * @return int
      */
     public function getl2() {
         return $this->getlevel(2);
     }
-    
+
     /**
+     * Get engagement level 3.
+     *
      * @return int
      */
     public function getl3() {
         return $this->getlevel(3);
     }
-    
+
     /**
+     * Get engagement level 4 up.
+     *
      * @return int
      */
     public function getl4up() {
@@ -223,15 +257,19 @@ class engagementresult {
         }
         return $sum;
     }
-    
+
     /**
+     * Get maximum engagement.
+     *
      * @return int
      */
     public function getmax() {
         return count($this->levels) > 0 ? max(array_keys($this->levels)) : null;
     }
-    
+
     /**
+     * Get average engagement.
+     *
      * @return double
      */
     public function getaverage () {
@@ -249,33 +287,15 @@ class engagementresult {
  * Class for calculating engagement
  */
 abstract class engagementcalculator {
-    /**
-     * @var int
-     */
+    /** @var int $discussionid Discussion ID. */
     protected $discussionid;
-    /**
-     * Key being post ID, value beinfg engagedposts
-     *
-     * @var engagedpost[]
-     */
+    /** @var engagedpost[] $postsdict Key being post ID, value beinfg engagedposts. */
     protected $postsdict = [];
-    /**
-     * ID of the first post
-     *
-     * @var int
-     */
+    /** @var int $firstpost ID of the first post. */
     protected $firstpost;
-    /**
-     * Start timestamp
-     *
-     * @var int
-     */
+    /** @var int $starttime Start timestamp. */
     protected $starttime = 0;
-    /**
-     * End timestamp
-     *
-     * @var int
-     */
+    /** @var int $endtime End timestamp. */
     protected $endtime = 0;
 
     /**
@@ -368,10 +388,12 @@ abstract class engagementcalculator {
     }
 
     /**
+     * Calculate engagement of a user.
+     *
      * @param int $userid
      * @return engagementresult
-    */
-    public abstract function calculate($userid);
+     */
+    abstract public function calculate($userid);
 }
 
 /**
@@ -379,6 +401,8 @@ abstract class engagementcalculator {
  */
 class p2pengagement extends engagementcalculator {
     /**
+     * Calculate engagement of a user.
+     *
      * @param int $userid
      * @return engagementresult
      */
@@ -389,6 +413,8 @@ class p2pengagement extends engagementcalculator {
     }
 
     /**
+     * Travel.
+     *
      * @param int $userid
      * @param engagedpost $post
      * @param engagementresult $result
@@ -415,6 +441,8 @@ class p2pengagement extends engagementcalculator {
  */
 class threadcountengagement extends engagementcalculator {
     /**
+     * Calculate engagement of a user.
+     *
      * @param int $userid
      * @return engagementresult
      */
@@ -435,6 +463,8 @@ class threadcountengagement extends engagementcalculator {
     }
 
     /**
+     * Travel.
+     *
      * @param int $userid
      * @param engagedpost $post
      * @param engagementresult $result
@@ -456,6 +486,8 @@ class threadcountengagement extends engagementcalculator {
  */
 class threadengagement extends engagementcalculator {
     /**
+     * Calculate engagement of a user.
+     *
      * @param int $userid
      * @return engagementresult
      */
@@ -466,6 +498,8 @@ class threadengagement extends engagementcalculator {
     }
 
     /**
+     * Travel.
+     *
      * @param int $userid
      * @param engagedpost $post
      * @param engagementresult $result

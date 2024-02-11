@@ -24,19 +24,35 @@
 
 namespace availability_forummetric;
 
+use core_date;
 use stdClass;
 
-defined('MOODLE_INTERNAL') or die();
+defined('MOODLE_INTERNAL') || die();
 
-include_once(__DIR__ . '/engagement.php');
+require_once(__DIR__ . '/engagement.php');
 
+/**
+ * Forum metric availability condition.
+ *
+ * Module availability by metric values from forum modules.
+ */
 class condition extends \core_availability\condition {
+    /** @var bool $valid Is valid. */
     protected $valid = false;
+    /** @var int $forum Forum ID to be source of conditional value. */
     protected $forum = null;
+    /** @var string $metric Metric name. */
     protected $metric = null;
+    /** @var string $engagementmethod Engagement method. */
     protected $engagementmethod = null;
+    /** @var string $condition Checking condition. */
     protected $condition = null;
+    /** @var string $value Required value. */
     protected $value = null;
+    /** @var int|null $fromdate Timestamp of the start date. */
+    protected $fromdate = null;
+    /** @var int|null $to Timestamp of the end date. */
+    protected $todate = null;
 
     /**
      * Constructor
@@ -64,6 +80,10 @@ class condition extends \core_availability\condition {
         if (isset($structure->value)) {
             $this->value = $structure->value;
         }
+        $this->fromdate = isset($structure->fromdate) && !is_null($structure->fromdate) ?
+            $this->get_structure_timestamp($structure->fromdate) : null;
+        $this->todate = isset($structure->todate) && !is_null($structure->todate) ?
+            $this->get_structure_timestamp($structure->todate) : null;
 
         $this->valid = !is_null($this->forum) && !is_null($this->metric) && !is_null($this->condition) && !is_null($this->value);
     }
@@ -81,13 +101,21 @@ class condition extends \core_availability\condition {
      * @return bool True if available
      */
     public function is_available($not, \core_availability\info $info, $grabthelot, $userid) {
-        if (!$this->valid) return false;
+        if (!$this->valid) {
+            return false;
+        }
         $uservalue = $this->getuservalue($userid, $info);
-        if (is_null($uservalue)) return false;
+        if (is_null($uservalue)) {
+            return false;
+        }
         $satisfies = false;
         switch ($this->condition) {
-            case 'morethan': $satisfies = $uservalue > $this->value; break;
-            case 'lessthan': $satisfies = $uservalue < $this->value; break;
+            case 'morethan':
+                $satisfies = $uservalue > $this->value;
+                break;
+            case 'lessthan':
+                $satisfies = $uservalue < $this->value;
+                break;
         }
         return $not ? !$satisfies : $satisfies;
     }
@@ -105,15 +133,28 @@ class condition extends \core_availability\condition {
      *   this item
      */
     public function get_description($full, $not, \core_availability\info $info) {
-        /**
-         * @var \moodle_database $DB
-         */
         global $DB;
-        return get_string($not ? 'notavailabilitydescription' : 'availabilitydescription', 'availability_forummetric', [
+        /** @var \moodle_database $DB */
+        $DB;
+        $datetype = '';
+        if (!is_null($this->fromdate) && is_null($this->todate)) {
+            $datetype = 'from';
+        } else if (is_null($this->fromdate) && !is_null($this->todate)) {
+            $datetype = 'to';
+        } else if (!is_null($this->fromdate) && !is_null($this->todate)) {
+            $datetype = 'between';
+        }
+        $strname = ($not ? 'notavailabilitydescription' : 'availabilitydescription') . $datetype;
+
+        return get_string($strname, 'availability_forummetric', [
             'metric' => get_string($this->metric, 'availability_forummetric'),
-            'forum' => $this->forum > 0 ? $DB->get_record('forum', ['id' => $this->forum], 'name')->name : get_string('allforums', 'availability_forummetric'),
+            'forum' => $this->forum > 0 ?
+                $DB->get_record('forum', ['id' => $this->forum], 'name')->name
+                : get_string('allforums', 'availability_forummetric'),
             'condition' => get_string($this->condition, 'availability_forummetric'),
-            'value' => $this->value
+            'value' => $this->value,
+            'from' => is_null($this->fromdate) ? 'N/A' : userdate($this->fromdate),
+            'to' => is_null($this->todate) ? 'N/A' : userdate($this->todate),
         ]);
     }
 
@@ -128,6 +169,26 @@ class condition extends \core_availability\condition {
     }
 
     /**
+     * Get structure timestamp
+     *
+     * @param \stdClass $obj
+     * @return int|null
+     */
+    protected function get_structure_timestamp($obj) {
+        if (!isset($obj->enabled) || is_null($obj->enabled) || !$obj->enabled) {
+            return null;
+        }
+        if (!isset($obj->date) || is_null($obj->date)) {
+            return null;
+        }
+        $date = $obj->date;
+        $time = isset($obj->time) && !is_null($obj->time) ? $obj->time : '00:00:00';
+
+        $dt = new \DateTime($date . ' ' . $time, core_date::get_user_timezone_object());
+        return $dt->getTimestamp();
+    }
+
+    /**
      * Saves tree data back to a structure object.
      *
      * @return \stdClass Structure object (ready to be made into JSON format)
@@ -138,89 +199,139 @@ class condition extends \core_availability\condition {
             'forum' => $this->forum,
             'metric' => $this->metric,
             'condition' => $this->condition,
-            'value' => $this->value
+            'value' => $this->value,
         ];
     }
 
     /**
+     * Get user's value.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
      */
     public function getuservalue($userid, \core_availability\info $info) {
         switch ($this->metric) {
-            case 'numreplies': return $this->getnumreplies($userid, $info);
-            case 'numnationalities': return $this->getnumnationalities($userid, $info);
-            case 'uniquedaysactive': return $this->getuniquedaysactive($userid, $info);
-            case 'maxengagement': return $this->getmaxengagement($userid, $info);
-            default: return null;
+            case 'numreplies':
+                return $this->getnumreplies($userid, $info);
+            case 'numnationalities':
+                return $this->getnumnationalities($userid, $info);
+            case 'uniquedaysactive':
+                return $this->getuniquedaysactive($userid, $info);
+            case 'maxengagement':
+                return $this->getmaxengagement($userid, $info);
+            default:
+                return null;
         }
         return null;
     }
 
     /**
+     * Get date range SQL
+     *
+     * @return array{ 0: string, 1: int[] }
+     */
+    protected function getdaterangesql() {
+        if (is_null($this->fromdate) && is_null($this->todate)) {
+            return ['TRUE', []];
+        }
+        if (!is_null($this->fromdate) && is_null($this->todate)) {
+            return ['created >= ?', [$this->fromdate]];
+        }
+        if (is_null($this->fromdate) && !is_null($this->todate)) {
+            return ['created <= ?', [$this->todate]];
+        }
+        return ['created BETWEEN ? AND ?', [$this->fromdate, $this->todate]];
+    }
+
+    /**
+     * Get number of replies.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
      */
     protected function getnumreplies($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
+
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
 
         $record = $DB->get_record_sql(
             'SELECT COUNT(*) replies FROM {forum_posts} WHERE userid = ? AND parent > 0 AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))'
-            . ')',
-            [$userid, $this->forum, $this->forum, $info->get_course()->id]
+            . ') AND ' . $daterangesql,
+            array_merge([$userid, $this->forum, $this->forum, $info->get_course()->id], $daterangeparams)
         );
         return $record ? $record->replies : null;
     }
 
     /**
+     * Get number of nationalities.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
      */
     protected function getnumnationalities($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
+
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
 
         $record = $DB->get_record_sql('SELECT COUNT(DISTINCT country) countrycount FROM {user} WHERE id IN ('
-            . 'SELECT userid FROM {forum_posts} WHERE userid != ? AND discussion IN ('
+            . "SELECT userid FROM {forum_posts} WHERE userid != ? AND {$daterangesql} AND discussion IN ("
             . 'SELECT id FROM {forum_discussions} fd WHERE (fd.forum = ? OR (0 = ? AND fd.forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
             . '))) AND EXISTS ('
             . 'SELECT 1 FROM {forum_posts} fp WHERE fp.discussion = fd.id AND fp.userid = ?'
-            . ')))', [$userid, $this->forum, $this->forum, $info->get_course()->id, $userid]
-    );
+            . ')))',
+            array_merge([$userid], $daterangeparams, [$this->forum, $this->forum, $info->get_course()->id, $userid])
+        );
         return $record ? $record->countrycount : null;
     }
 
     /**
+     * Get number of unique active days.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int|null
      */
     protected function getuniquedaysactive($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
 
-        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
+        [$daterangesql, $daterangeparams] = $this->getdaterangesql();
+
+        $record = $DB->get_record_sql(
+            'SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount '
+            . 'FROM {forum_posts} WHERE userid = ? AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
-            . ')))',
-            [$userid, $this->forum, $this->forum, $info->get_course()->id]);
+            . '))) AND ' . $daterangesql,
+            array_merge([$userid, $this->forum, $this->forum, $info->get_course()->id], $daterangeparams)
+        );
         return $record ? $record->uniquedaysactivecount : null;
     }
 
     /**
+     * Get number of maximum engagement.
+     *
      * @param int $userid
      * @param \core_availability\info $info
      * @return int
      */
     protected function getmaxengagement($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
+
+        $startdate = is_null($this->fromdate) ? $this->fromdate : 0;
+        $enddate = is_null($this->todate) ? $this->todate : 0;
 
         $discussions = $DB->get_records_sql(
             'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN (SELECT id FROM {forum} WHERE course = ?))',
@@ -228,7 +339,7 @@ class condition extends \core_availability\condition {
         );
         $engagementresult = new engagementresult();
         foreach ($discussions as $discussion) {
-            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id);
+            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id, $startdate, $enddate);
             $engagementresult->add($engagement->calculate($userid));
         }
         $max = $engagementresult->getmax();

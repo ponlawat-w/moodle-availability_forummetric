@@ -1,0 +1,161 @@
+# src: https://moodlehq.github.io/moodle-plugin-ci
+name: CI
+
+on:
+  workflow_call:
+
+jobs:
+  matrix-test:
+
+    name: Test ${{ (matrix.moodle == 'MOODLE_400_STABLE' && 'M4.0') || (matrix.moodle == 'MOODLE_401_STABLE' && 'M4.1') || (matrix.moodle == 'MOODLE_402_STABLE' && 'M4.2') || (matrix.moodle == 'MOODLE_403_STABLE' && 'M4.3') || matrix.moodle }} P${{ matrix.php }} ${{ matrix.db }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - moodle: MOODLE_400_STABLE
+            php: 7.4
+            db: mysqli
+          - moodle: MOODLE_400_STABLE
+            php: 7.4
+            db: pgsql
+          - moodle: MOODLE_401_STABLE
+            php: 7.4
+            db: mysqli
+          - moodle: MOODLE_401_STABLE
+            php: 7.4
+            db: pgsql
+          - moodle: MOODLE_402_STABLE
+            php: 8.0
+            db: mysqli
+          - moodle: MOODLE_402_STABLE
+            php: 8.0
+            db: pgsql
+          - moodle: MOODLE_403_STABLE
+            php: 8.1
+            db: mysqli
+          - moodle: MOODLE_403_STABLE
+            php: 8.1
+            db: pgsql
+
+    services:
+      mysql:
+        image: ${{ (matrix.db == 'mysqli' && 'mysql') || '' }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_CHARACTER_SET_SERVER: utf8mb4
+          MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+        ports:
+          - 3306:3306
+        options: ${{ (matrix.db == 'mysqli' && '--health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 3') || '-e SKIP=1' }}
+      postgres:
+        image: ${{ (matrix.db == 'pgsql' && 'postgres') || '' }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: ${{ (matrix.db == 'pgsql' && '--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3') || '-e SKIP=1' }}
+
+    steps:
+
+      - name: Checkout for Composite Actions
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          sparse-checkout: .github
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions:
+          ini-values: max_input_vars=5000
+          # If you are not using code coverage, keep "none". Otherwise, use "pcov" (Moodle 3.10 and up) or "xdebug".
+          # If you try to use code coverage with "none", it will fallback to phpdbg (which has known problems).
+          coverage: none
+
+      - name: Checkout Plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+          ref: ${{ github.ref }}
+
+      - name: Initialise moodle-plugin-ci
+        shell: bash
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
+          echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
+          sudo locale-gen en_AU.UTF-8
+          echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
+
+      - name: Install moodle-plugin-ci
+        shell: bash
+        run: moodle-plugin-ci install --plugin ./plugin --db-host 127.0.0.1
+        env:
+          DB: ${{ matrix.db }}
+          MOODLE_BRANCH: ${{ matrix.moodle }}
+
+      - name: PHP Lint
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phplint -- ./moodle/availability/condition/forummetric
+  
+      - name: PHP Copy/Paste Detector
+        continue-on-error: true # This step will show errors but will not fail
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phpcpd -- ./moodle/availability/condition/forummetric
+  
+      - name: PHP Mess Detector
+        continue-on-error: true # This step will show errors but will not fail
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phpmd -- ./moodle/availability/condition/forummetric
+  
+      - name: Moodle Code Checker
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phpcs --max-warnings 0 -- ./moodle/availability/condition/forummetric
+  
+      - name: Moodle PHPDoc Checker
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phpdoc --max-warnings 0 -- ./moodle/availability/condition/forummetric
+  
+      - name: Validating
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci validate -- ./moodle/availability/condition/forummetric
+  
+      - name: Check upgrade savepoints
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci savepoints -- ./moodle/availability/condition/forummetric
+  
+      - name: Mustache Lint
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci mustache -- ./moodle/availability/condition/forummetric
+  
+      # - name: Grunt
+      #   if: ${{ !cancelled() }}
+      #   shell: bash
+      #   run: moodle-plugin-ci grunt --max-lint-warnings 0 -- ./moodle/availability/condition/forummetric
+  
+      - name: PHPUnit tests
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci phpunit --fail-on-warning -- ./moodle/availability/condition/forummetric
+  
+      - name: Behat features
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: moodle-plugin-ci behat --profile chrome -- ./moodle/availability/condition/forummetric
+  
+      - name: Mark cancelled jobs as failed.
+        if: ${{ cancelled() }}
+        shell: bash
+        run: exit 1
