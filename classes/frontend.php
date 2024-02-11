@@ -24,9 +24,9 @@
 
 namespace availability_forummetric;
 
-defined('MOODLE_INTERNAL') or die();
+defined('MOODLE_INTERNAL') || die();
 
-include_once(__DIR__ . '/engagement.php');
+require_once(__DIR__ . '/engagement.php');
 
 class frontend extends \core_availability\frontend {
     protected function get_javascript_strings() {
@@ -35,7 +35,7 @@ class frontend extends \core_availability\frontend {
             'lessthan',
             'morethan',
             'fromdate',
-            'todate'
+            'todate',
         ];
     }
 
@@ -46,7 +46,7 @@ class frontend extends \core_availability\frontend {
         $options = [
             ['metric' => 'numreplies', 'name' => get_string('numreplies', 'availability_forummetric')],
             ['metric' => 'numnationalities', 'name' => get_string('numnationalities', 'availability_forummetric')],
-            ['metric' => 'uniquedaysactive', 'name' => get_string('uniquedaysactive', 'availability_forummetric')]
+            ['metric' => 'uniquedaysactive', 'name' => get_string('uniquedaysactive', 'availability_forummetric')],
         ];
 
         foreach (engagement::getselectoptions() as $metric => $name) {
@@ -57,10 +57,9 @@ class frontend extends \core_availability\frontend {
     }
 
     protected function get_javascript_init_params($course, \cm_info $cm = null, \section_info $section = null) {
-        /**
-         * @var \moodle_daabase $DB
-         */
         global $DB;
+        /** @var \moodle_daabase $DB */
+        $DB;
         $forums = $DB->get_records('forum', ['course' => $course->id], 'name ASC, id ASC', 'id, name');
         $arr = [];
         foreach ($forums as $forum) {

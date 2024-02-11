@@ -36,9 +36,12 @@ class engagement {
      */
     private static function getstring($method, $suffix = '') {
         switch ($method) {
-            case static::PERSON_TO_PERSON: return get_string('engagement_persontoperson' . $suffix, static::COMPONENT);
-            case static::THREAD_TOTAL_COUNT: return get_string('engagement_threadtotalcount' . $suffix, static::COMPONENT);
-            case static::THREAD_ENGAGEMENT: return get_string('engagement_threadengagement' . $suffix, static::COMPONENT);
+            case static::PERSON_TO_PERSON:
+                return get_string('engagement_persontoperson' . $suffix, static::COMPONENT);
+            case static::THREAD_TOTAL_COUNT:
+                return get_string('engagement_threadtotalcount' . $suffix, static::COMPONENT);
+            case static::THREAD_ENGAGEMENT:
+                return get_string('engagement_threadengagement' . $suffix, static::COMPONENT);
         }
         throw new \moodle_exception('Invalid method');
     }
@@ -54,9 +57,12 @@ class engagement {
      */
     public static function getinstancefrommethod($method, $discussionid, $starttime = 0, $endtime = 0) {
         switch ($method) {
-            case static::PERSON_TO_PERSON: return new p2pengagement($discussionid, $starttime, $endtime);
-            case static::THREAD_TOTAL_COUNT: return new threadcountengagement($discussionid, $starttime, $endtime);
-            case static::THREAD_ENGAGEMENT: return new threadengagement($discussionid, $starttime, $endtime);
+            case static::PERSON_TO_PERSON:
+                return new p2pengagement($discussionid, $starttime, $endtime);
+            case static::THREAD_TOTAL_COUNT:
+                return new threadcountengagement($discussionid, $starttime, $endtime);
+            case static::THREAD_ENGAGEMENT:
+                return new threadengagement($discussionid, $starttime, $endtime);
         }
         throw new \moodle_exception('Invalid method');
     }
@@ -90,7 +96,7 @@ class engagement {
         return [
             static::PERSON_TO_PERSON,
             static::THREAD_TOTAL_COUNT,
-            static::THREAD_ENGAGEMENT
+            static::THREAD_ENGAGEMENT,
         ];
     }
 
@@ -113,8 +119,12 @@ class engagement {
      * @param MoodleQuickForm $mform
      */
     public static function addtoform($mform, $elementname = 'engagementmethod', $defaultvalue = null) {
-        $mform->addElement('select', $elementname, get_string('engagement_method', static::COMPONENT), engagement::getselectoptions());
-        $mform->addHelpButton($elementname, 'engagement_method', static::COMPONENT);
+        $mform->addElement(
+            'select', $elementname,
+            get_string('engagement_method', self::COMPONENT),
+            self::getselectoptions()
+        );
+        $mform->addHelpButton($elementname, 'engagement_method', self::COMPONENT);
         if (is_null($defaultvalue)) {
             $defaultvalue = get_config(static::COMPONENT, 'defaultengagementmethod');
         }
@@ -195,21 +205,21 @@ class engagementresult {
     public function getl1() {
         return $this->getlevel(1);
     }
-    
+
     /**
      * @return int
      */
     public function getl2() {
         return $this->getlevel(2);
     }
-    
+
     /**
      * @return int
      */
     public function getl3() {
         return $this->getlevel(3);
     }
-    
+
     /**
      * @return int
      */
@@ -223,14 +233,14 @@ class engagementresult {
         }
         return $sum;
     }
-    
+
     /**
      * @return int
      */
     public function getmax() {
         return count($this->levels) > 0 ? max(array_keys($this->levels)) : null;
     }
-    
+
     /**
      * @return double
      */
@@ -370,8 +380,8 @@ abstract class engagementcalculator {
     /**
      * @param int $userid
      * @return engagementresult
-    */
-    public abstract function calculate($userid);
+     */
+    abstract public function calculate($userid);
 }
 
 /**

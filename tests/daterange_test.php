@@ -16,6 +16,8 @@
 
 namespace availability_forummetric;
 
+defined('MOODLE_INTERNAL') || die();
+
 require_once(__DIR__ . '/../../../tests/fixtures/mock_info.php');
 
 /**
@@ -27,6 +29,10 @@ require_once(__DIR__ . '/../../../tests/fixtures/mock_info.php');
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class daterange_test extends \advanced_testcase {
+
+    /**
+     * @covers \availability_forummetric\condition::is_availables
+     */
     public function test_daterage() {
         $this->resetAfterTest(true);
 
@@ -39,40 +45,41 @@ class daterange_test extends \advanced_testcase {
         $postuser = $this->getDataGenerator()->create_user();
         $replyuser = $this->getDataGenerator()->create_user();
 
-        $discussion = $forumgenerator->create_discussion(
-            ['userid' => $postuser->id, 'course' => $course->id, 'forum' => $forum->id, 'timemodified' => mktime(12, 0, 0, 1, 26, 2024)]
-        );
-        $forumgenerator->create_post([
-            'userid' => $replyuser->id,
-            'discussion' => $discussion->id,
-            'parent' => $discussion->id,
-            'created' => mktime(12, 30, 0, 1, 26, 2024)
+        $discussion = $forumgenerator->create_discussion([
+            'userid' => $postuser->id, 'course' => $course->id,
+            'forum' => $forum->id, 'timemodified' => mktime(12, 0, 0, 1, 26, 2024),
         ]);
         $forumgenerator->create_post([
             'userid' => $replyuser->id,
             'discussion' => $discussion->id,
             'parent' => $discussion->id,
-            'created' => mktime(8, 0, 0, 1, 27, 2024)
+            'created' => mktime(12, 30, 0, 1, 26, 2024),
         ]);
         $forumgenerator->create_post([
             'userid' => $replyuser->id,
             'discussion' => $discussion->id,
             'parent' => $discussion->id,
-            'created' => mktime(10, 0, 0, 1, 27, 2024)
+            'created' => mktime(8, 0, 0, 1, 27, 2024),
+        ]);
+        $forumgenerator->create_post([
+            'userid' => $replyuser->id,
+            'discussion' => $discussion->id,
+            'parent' => $discussion->id,
+            'created' => mktime(10, 0, 0, 1, 27, 2024),
         ]);
 
         $info = new \core_availability\mock_info($course, $replyuser->id);
 
-        $condition_none = new condition((object)[
+        $conditionnone = new condition((object)[
             'type' => 'forummetric',
             'forum' => $forum->id,
             'metric' => 'numreplies',
             'condition' => 'morethan',
-            'value' => 0
+            'value' => 0,
         ]);
-        $this->assertEquals(3, $condition_none->getuservalue($replyuser->id, $info));
+        $this->assertEquals(3, $conditionnone->getuservalue($replyuser->id, $info));
 
-        $condition_from = new condition((object)[
+        $conditionfrom = new condition((object)[
             'type' => 'forummetric',
             'forum' => $forum->id,
             'metric' => 'numreplies',
@@ -81,12 +88,12 @@ class daterange_test extends \advanced_testcase {
             'fromdate' => (object)[
                 'enabled' => true,
                 'date' => '2024-01-27',
-                'time' => '00:00:00'
-            ]
+                'time' => '00:00:00',
+            ],
         ]);
-        $this->assertEquals(2, $condition_from->getuservalue($replyuser->id, $info));
+        $this->assertEquals(2, $conditionfrom->getuservalue($replyuser->id, $info));
 
-        $condition_to = new condition((object)[
+        $conditionto = new condition((object)[
             'type' => 'forummetric',
             'forum' => $forum->id,
             'metric' => 'numreplies',
@@ -95,12 +102,12 @@ class daterange_test extends \advanced_testcase {
             'todate' => (object)[
                 'enabled' => true,
                 'date' => '2024-01-26',
-                'time' => '23:59:59'
-            ]
+                'time' => '23:59:59',
+            ],
         ]);
-        $this->assertEquals(1, $condition_to->getuservalue($replyuser->id, $info));
+        $this->assertEquals(1, $conditionto->getuservalue($replyuser->id, $info));
 
-        $condition_range = new condition((object)[
+        $conditionrange = new condition((object)[
             'type' => 'forummetric',
             'forum' => $forum->id,
             'metric' => 'numreplies',
@@ -109,14 +116,14 @@ class daterange_test extends \advanced_testcase {
             'fromdate' => (object)[
                 'enabled' => true,
                 'date' => '2024-01-27',
-                'time' => '07:00:00'
+                'time' => '07:00:00',
             ],
             'todate' => (object)[
                 'enabled' => true,
                 'date' => '2024-01-27',
-                'time' => '09:00:00'
-            ]
+                'time' => '09:00:00',
+            ],
         ]);
-        $this->assertEquals(1, $condition_range->getuservalue($replyuser->id, $info));
+        $this->assertEquals(1, $conditionrange->getuservalue($replyuser->id, $info));
     }
 }

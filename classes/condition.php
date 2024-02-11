@@ -27,9 +27,9 @@ namespace availability_forummetric;
 use core_date;
 use stdClass;
 
-defined('MOODLE_INTERNAL') or die();
+defined('MOODLE_INTERNAL') || die();
 
-include_once(__DIR__ . '/engagement.php');
+require_once(__DIR__ . '/engagement.php');
 
 class condition extends \core_availability\condition {
     protected $valid = false;
@@ -67,8 +67,10 @@ class condition extends \core_availability\condition {
         if (isset($structure->value)) {
             $this->value = $structure->value;
         }
-        $this->fromdate = isset($structure->fromdate) && !is_null($structure->fromdate) ? $this->get_structure_timestamp($structure->fromdate) : null;
-        $this->todate = isset($structure->todate) && !is_null($structure->todate) ? $this->get_structure_timestamp($structure->todate) : null;
+        $this->fromdate = isset($structure->fromdate) && !is_null($structure->fromdate) ?
+            $this->get_structure_timestamp($structure->fromdate) : null;
+        $this->todate = isset($structure->todate) && !is_null($structure->todate) ?
+            $this->get_structure_timestamp($structure->todate) : null;
 
         $this->valid = !is_null($this->forum) && !is_null($this->metric) && !is_null($this->condition) && !is_null($this->value);
     }
@@ -86,13 +88,21 @@ class condition extends \core_availability\condition {
      * @return bool True if available
      */
     public function is_available($not, \core_availability\info $info, $grabthelot, $userid) {
-        if (!$this->valid) return false;
+        if (!$this->valid) {
+            return false;
+        }
         $uservalue = $this->getuservalue($userid, $info);
-        if (is_null($uservalue)) return false;
+        if (is_null($uservalue)) {
+            return false;
+        }
         $satisfies = false;
         switch ($this->condition) {
-            case 'morethan': $satisfies = $uservalue > $this->value; break;
-            case 'lessthan': $satisfies = $uservalue < $this->value; break;
+            case 'morethan':
+                $satisfies = $uservalue > $this->value;
+                break;
+            case 'lessthan':
+                $satisfies = $uservalue < $this->value;
+                break;
         }
         return $not ? !$satisfies : $satisfies;
     }
@@ -110,23 +120,28 @@ class condition extends \core_availability\condition {
      *   this item
      */
     public function get_description($full, $not, \core_availability\info $info) {
-        /**
-         * @var \moodle_database $DB
-         */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
         $datetype = '';
-        if (!is_null($this->fromdate) && is_null($this->todate)) $datetype = 'from';
-        else if (is_null($this->fromdate) && !is_null($this->todate)) $datetype = 'to';
-        else if (!is_null($this->fromdate) && !is_null($this->todate)) $datetype = 'between';
+        if (!is_null($this->fromdate) && is_null($this->todate)) {
+            $datetype = 'from';
+        } else if (is_null($this->fromdate) && !is_null($this->todate)) {
+            $datetype = 'to';
+        } else if (!is_null($this->fromdate) && !is_null($this->todate)) {
+            $datetype = 'between';
+        }
         $strname = ($not ? 'notavailabilitydescription' : 'availabilitydescription') . $datetype;
 
         return get_string($strname, 'availability_forummetric', [
             'metric' => get_string($this->metric, 'availability_forummetric'),
-            'forum' => $this->forum > 0 ? $DB->get_record('forum', ['id' => $this->forum], 'name')->name : get_string('allforums', 'availability_forummetric'),
+            'forum' => $this->forum > 0 ?
+                $DB->get_record('forum', ['id' => $this->forum], 'name')->name
+                : get_string('allforums', 'availability_forummetric'),
             'condition' => get_string($this->condition, 'availability_forummetric'),
             'value' => $this->value,
             'from' => is_null($this->fromdate) ? 'N/A' : userdate($this->fromdate),
-            'to' => is_null($this->todate) ? 'N/A' : userdate($this->todate)
+            'to' => is_null($this->todate) ? 'N/A' : userdate($this->todate),
         ]);
     }
 
@@ -147,8 +162,12 @@ class condition extends \core_availability\condition {
      * @return int|null
      */
     protected function get_structure_timestamp($obj) {
-        if (!isset($obj->enabled) || is_null($obj->enabled) || !$obj->enabled) return null;
-        if (!isset($obj->date) || is_null($obj->date)) return null;
+        if (!isset($obj->enabled) || is_null($obj->enabled) || !$obj->enabled) {
+            return null;
+        }
+        if (!isset($obj->date) || is_null($obj->date)) {
+            return null;
+        }
         $date = $obj->date;
         $time = isset($obj->time) && !is_null($obj->time) ? $obj->time : '00:00:00';
 
@@ -167,7 +186,7 @@ class condition extends \core_availability\condition {
             'forum' => $this->forum,
             'metric' => $this->metric,
             'condition' => $this->condition,
-            'value' => $this->value
+            'value' => $this->value,
         ];
     }
 
@@ -178,11 +197,16 @@ class condition extends \core_availability\condition {
      */
     public function getuservalue($userid, \core_availability\info $info) {
         switch ($this->metric) {
-            case 'numreplies': return $this->getnumreplies($userid, $info);
-            case 'numnationalities': return $this->getnumnationalities($userid, $info);
-            case 'uniquedaysactive': return $this->getuniquedaysactive($userid, $info);
-            case 'maxengagement': return $this->getmaxengagement($userid, $info);
-            default: return null;
+            case 'numreplies':
+                return $this->getnumreplies($userid, $info);
+            case 'numnationalities':
+                return $this->getnumnationalities($userid, $info);
+            case 'uniquedaysactive':
+                return $this->getuniquedaysactive($userid, $info);
+            case 'maxengagement':
+                return $this->getmaxengagement($userid, $info);
+            default:
+                return null;
         }
         return null;
     }
@@ -211,8 +235,9 @@ class condition extends \core_availability\condition {
      * @return int|null
      */
     protected function getnumreplies($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
 
         [$daterangesql, $daterangeparams] = $this->getdaterangesql();
 
@@ -231,8 +256,9 @@ class condition extends \core_availability\condition {
      * @return int|null
      */
     protected function getnumnationalities($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
 
         [$daterangesql, $daterangeparams] = $this->getdaterangesql();
 
@@ -254,12 +280,15 @@ class condition extends \core_availability\condition {
      * @return int|null
      */
     protected function getuniquedaysactive($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
 
         [$daterangesql, $daterangeparams] = $this->getdaterangesql();
 
-        $record = $DB->get_record_sql('SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount FROM {forum_posts} WHERE userid = ? AND discussion IN ('
+        $record = $DB->get_record_sql(
+            'SELECT COUNT(DISTINCT (created - (created % 86400))) uniquedaysactivecount '
+            . 'FROM {forum_posts} WHERE userid = ? AND discussion IN ('
             . 'SELECT id FROM {forum_discussions} WHERE forum = ? OR (0 = ? AND forum IN ('
             . 'SELECT id FROM {forum} WHERE course = ?'
             . '))) AND ' . $daterangesql,
@@ -274,8 +303,9 @@ class condition extends \core_availability\condition {
      * @return int
      */
     protected function getmaxengagement($userid, \core_availability\info $info) {
-        /** @var \moodle_database $DB */
         global $DB;
+        /** @var \moodle_database $DB */
+        $DB;
 
         $startdate = is_null($this->fromdate) ? $this->fromdate : 0;
         $enddate = is_null($this->todate) ? $this->todate : 0;
