@@ -11,9 +11,9 @@ M.availability_forummetric = M.availability_forummetric || {};
  */
 M.availability_forummetric.form = Y.Object(M.core_availability.plugin);
 
-M.availability_forummetric.form.initInner = function(metrics = [], forums = []) {
-    this.metrics = metrics.filter(x => x.metric && x.name);
-    this.forums = forums.filter(x => x.id && x.name);
+M.availability_forummetric.form.initInner = function(metrics, forums) {
+    this.metrics = (metrics ?? []).filter(x => x.metric && x.name);
+    this.forums = (forums ?? []).filter(x => x.id && x.name);
 };
 
 function getdateinput(name, show) {

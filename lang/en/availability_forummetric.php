@@ -51,7 +51,7 @@ $string['allforums'] = 'All forums';
 
 $string['lessthan'] = 'less than';
 $string['morethan'] = 'more than';
-$string['fromdate'] = 'Start date';
+$string['fromdate'] = 'From date';
 $string['todate'] = 'To date';
 
 $string['numreplies'] = 'Number of replies';
