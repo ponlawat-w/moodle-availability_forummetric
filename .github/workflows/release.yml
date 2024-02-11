@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-      - name: Push to release branch (without default widgets)
+      - name: Push to release branch
         run: |
           git checkout -b ${{ needs.get-version.outputs.branch-name }}
           git push -f -u origin ${{ needs.get-version.outputs.branch-name }}
