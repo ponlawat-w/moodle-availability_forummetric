@@ -38,6 +38,8 @@ $string['engagement_threadtotalcount_description'] = 'The engagement level incre
 $string['engagement_threadengagement'] = 'Maximum Engagement Level (Thread)';
 $string['engagement_threadengagement_description'] = 'The engagement level increases each time a user participates in a reply where they already participated in the parent posts.';
 
+$string['engagement_international'] = 'International engagement only';
+
 $string['availabilitydescription'] = '{$a->metric} in "{$a->forum}" must be {$a->condition} {$a->value}.';
 $string['availabilitydescriptionfrom'] = '{$a->metric} from {$a->from} in "{$a->forum}" must be {$a->condition} {$a->value}.';
 $string['availabilitydescriptionto'] = '{$a->metric} to {$a->to} in "{$a->forum}" must be {$a->condition} {$a->value}.';
@@ -58,3 +60,4 @@ $string['numreplies'] = 'Number of replies';
 $string['numnationalities'] = 'Number of nationalities engaged';
 $string['uniquedaysactive'] = 'Unique days active';
 $string['maxengagement'] = 'Maximum Engagement Level';
+$string['maxinternationalengagement'] = 'Maximum International Engagement Level';

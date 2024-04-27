@@ -65,16 +65,17 @@ class engagement {
      * @param int $discussionid
      * @param int $starttime
      * @param int $endtime
+     * @param bool $international
      * @return engagementcalculator
      */
-    public static function getinstancefrommethod($method, $discussionid, $starttime = 0, $endtime = 0) {
+    public static function getinstancefrommethod($method, $discussionid, $starttime = 0, $endtime = 0, $international = false) {
         switch ($method) {
             case static::PERSON_TO_PERSON:
-                return new p2pengagement($discussionid, $starttime, $endtime);
+                return new p2pengagement($discussionid, $starttime, $endtime, $international);
             case static::THREAD_TOTAL_COUNT:
-                return new threadcountengagement($discussionid, $starttime, $endtime);
+                return new threadcountengagement($discussionid, $starttime, $endtime, $international);
             case static::THREAD_ENGAGEMENT:
-                return new threadengagement($discussionid, $starttime, $endtime);
+                return new threadengagement($discussionid, $starttime, $endtime, $international);
         }
         throw new \moodle_exception('Invalid method');
     }
@@ -131,8 +132,16 @@ class engagement {
      * @param MoodleQuickForm $mform
      * @param string $elementname
      * @param int $defaultvalue
+     * @param string $internationalname
+     * @param int $defaultinternational
      */
-    public static function addtoform($mform, $elementname = 'engagementmethod', $defaultvalue = null) {
+    public static function addtoform(
+        $mform,
+        $elementname = 'engagementmethod',
+        $defaultvalue = null,
+        $internationalname = 'engagementinternational',
+        $defaultinternational = false
+    ) {
         $mform->addElement(
             'select', $elementname,
             get_string('engagement_method', self::COMPONENT),
@@ -143,6 +152,12 @@ class engagement {
             $defaultvalue = get_config(static::COMPONENT, 'defaultengagementmethod');
         }
         $mform->setDefault($elementname, $defaultvalue);
+
+        $mform->addElement(
+            'checkbox', $internationalname,
+            get_string('engagement_international', static::COMPONENT)
+        );
+        $mform->setDefault($internationalname, $defaultinternational);
     }
 }
 
@@ -272,7 +287,7 @@ class engagementresult {
      *
      * @return double
      */
-    public function getaverage () {
+    public function getaverage() {
         $sum = 0;
         $count = 0;
         foreach ($this->levels as $level => $value) {
@@ -291,12 +306,16 @@ abstract class engagementcalculator {
     protected $discussionid;
     /** @var engagedpost[] $postsdict Key being post ID, value beinfg engagedposts. */
     protected $postsdict = [];
+    /** @var string[] Key being user ID, value being nationality */
+    protected $nationalitiesdict = [];
     /** @var int $firstpost ID of the first post. */
     protected $firstpost;
     /** @var int $starttime Start timestamp. */
     protected $starttime = 0;
     /** @var int $endtime End timestamp. */
     protected $endtime = 0;
+    /** @var bool $international International Only. */
+    protected $international = false;
 
     /**
      * Constructor
@@ -304,14 +323,21 @@ abstract class engagementcalculator {
      * @param int $discussionid
      * @param int $starttime
      * @param int $endtime
+     * @param bool $international
      */
-    public function __construct($discussionid, $starttime = 0, $endtime = 0) {
+    public function __construct(
+        $discussionid,
+        $starttime = 0, $endtime = 0,
+        $international = false
+    ) {
         $this->discussionid = $discussionid;
         $this->starttime = $starttime;
         $this->endtime = $endtime;
+        $this->international = $international;
         $this->getposts();
         $this->initchildren();
         $this->checkpoststime();
+        $this->getusernationalities();
     }
 
     /**
@@ -377,6 +403,31 @@ abstract class engagementcalculator {
     }
 
     /**
+     * Fetch user nationalities dict
+     */
+    private function getusernationalities() {
+        global $DB;
+        /** @var \moodle_database $DB */ $DB;
+        $userids = [];
+        foreach ($this->postsdict as $post) {
+            if (in_array($post->userid, $userids)) {
+                continue;
+            }
+            $userids[] = $post->userid;
+        }
+        if (!count($userids)) {
+            return;
+        }
+
+        [$sql, $params] = $DB->get_in_or_equal($userids);
+        $records = $DB->get_records_sql('SELECT id, country FROM {user} WHERE id ' . $sql, $params);
+
+        foreach ($records as $record) {
+            $this->nationalitiesdict[$record->id] = $record->country;
+        }
+    }
+
+    /**
      * Test if given post satisfies time condition
      *
      * @param engagedpost $post
@@ -385,6 +436,20 @@ abstract class engagementcalculator {
     private function postsatisfiestime($post) {
         return (!$this->starttime || ($post->created >= $this->starttime))
             && (!$this->endtime || ($post->created <= $this->endtime));
+    }
+
+    /**
+     * Test if given post and reply satisfies international condition
+     *
+     * @param engagedpost $parent
+     * @param engagedpost $reply
+     * @return bool
+     */
+    protected function satisfiesinternational($parent, $reply) {
+        if (!$this->international) {
+            return true;
+        }
+        return $this->nationalitiesdict[$parent->userid] != $this->nationalitiesdict[$reply->userid];
     }
 
     /**
@@ -427,7 +492,7 @@ class p2pengagement extends engagementcalculator {
                     $userengagement[$post->userid] = 0;
                 }
                 $userengagement[$post->userid]++;
-                if ($childpost->satisfiestime) {
+                if ($childpost->satisfiestime && $this->satisfiesinternational($post, $childpost)) {
                     $result->increase($userengagement[$post->userid]);
                 }
             }
@@ -472,7 +537,12 @@ class threadcountengagement extends engagementcalculator {
      */
     public function travel($userid, $post, $result, &$count) {
         foreach ($post->children as $childpost) {
-            if ($childpost->userid != $post->userid && $childpost->userid == $userid && $childpost->satisfiestime) {
+            if (
+                $childpost->userid != $post->userid
+                && $childpost->userid == $userid
+                && $childpost->satisfiestime
+                && $this->satisfiesinternational($post, $childpost)
+            ) {
                 $count++;
                 $result->increase($count);
             }
@@ -508,7 +578,7 @@ class threadengagement extends engagementcalculator {
     public function travel($userid, $post, $result, $level = 1) {
         foreach ($post->children as $childpost) {
             if ($childpost->userid != $post->userid && $childpost->userid == $userid) {
-                if ($childpost->satisfiestime) {
+                if ($childpost->satisfiestime && $this->satisfiesinternational($post, $childpost)) {
                     $result->increase($level);
                 }
                 $this->travel($userid, $childpost, $result, $level + 1);

@@ -45,6 +45,8 @@ class condition extends \core_availability\condition {
     protected $metric = null;
     /** @var string $engagementmethod Engagement method. */
     protected $engagementmethod = null;
+    /** @var bool $engagementinternational International engagement only. */
+    protected $engagementinternational = null;
     /** @var string $condition Checking condition. */
     protected $condition = null;
     /** @var string $value Required value. */
@@ -72,6 +74,8 @@ class condition extends \core_availability\condition {
                 $engagements = explode('_', $this->metric);
                 $this->metric = 'maxengagement';
                 $this->engagementmethod = (int)$engagements[1];
+                $this->engagementinternational = isset($structure->engagementinternational) ?
+                    ($structure->engagementinternational ? true : false) : false;
             }
         }
         if (isset($structure->condition)) {
@@ -146,8 +150,13 @@ class condition extends \core_availability\condition {
         }
         $strname = ($not ? 'notavailabilitydescription' : 'availabilitydescription') . $datetype;
 
+        $metricname = $this->metric;
+        if ($this->metric === 'maxengagement' && $this->engagementinternational) {
+            $metricname = 'maxinternationalengagement';
+        }
+
         return get_string($strname, 'availability_forummetric', [
-            'metric' => get_string($this->metric, 'availability_forummetric'),
+            'metric' => get_string($metricname, 'availability_forummetric'),
             'forum' => $this->forum > 0 ?
                 $DB->get_record('forum', ['id' => $this->forum], 'name')->name
                 : get_string('allforums', 'availability_forummetric'),
@@ -339,7 +348,12 @@ class condition extends \core_availability\condition {
         );
         $engagementresult = new engagementresult();
         foreach ($discussions as $discussion) {
-            $engagement = engagement::getinstancefrommethod($this->engagementmethod, $discussion->id, $startdate, $enddate);
+            $engagement = engagement::getinstancefrommethod(
+                $this->engagementmethod,
+                $discussion->id,
+                $startdate, $enddate,
+                $this->engagementinternational
+            );
             $engagementresult->add($engagement->calculate($userid));
         }
         $max = $engagementresult->getmax();

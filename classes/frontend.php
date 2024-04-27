@@ -44,6 +44,7 @@ class frontend extends \core_availability\frontend {
             'morethan',
             'fromdate',
             'todate',
+            'engagement_international',
         ];
     }
 

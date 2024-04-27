@@ -36,6 +36,16 @@ function initiatedateinputevent(node, name) {
     });
 }
 
+function initiateengagementevent(node) {
+    const select = node.one('select[name=metric]');
+    const label = node.one('label[data-identifier=engagementinternational]');
+    if (!select || !label) return;
+    select.on('change', () => {
+        const display = select.get('value').startsWith('maxengagement_') ? 'inline-block' : 'none';
+        label.setStyle('display', display);
+    });
+}
+
 M.availability_forummetric.form.getNode = function(json) {
     let html = '<span class="availability-forummetric">';
     html += '<select name="forum" class="form-control">';
@@ -56,6 +66,9 @@ M.availability_forummetric.form.getNode = function(json) {
     html += '<input type="number" name="value" class="form-control" min="0">'
     html += getdateinput('fromdate', json.fromdate?.enabled ?? false);
     html += getdateinput('todate', json.todate?.enabled ?? false);
+    html += `<label data-identifier="engagementinternational" style="display: ${json.metric?.startsWith('maxengagement_') ? 'block' : 'none'};">`;
+    html += `<input type="checkbox" name="engagementinternational"> ${M.util.get_string('engagement_international', 'availability_forummetric')}`;
+    html += '</label>';
     html += '</span>';
     const node = Y.Node.create(`<span class="form-inline">${html}</span>`);
 
@@ -69,6 +82,7 @@ M.availability_forummetric.form.getNode = function(json) {
     const todate_enabled = node.one('input[name=todate_enabled]');
     const todate_date = node.one('input[name=todate_date]');
     const todate_time = node.one('input[name=todate_time]');
+    const engagementinternational = node.one('input[name=engagementinternational]');
 
     if (forum) {
         forum.set('value', json.forum ?? 0);
@@ -100,11 +114,15 @@ M.availability_forummetric.form.getNode = function(json) {
     if (todate_time) {
         todate_time.set('value', json.todate?.time ?? null);
     }
+    if (engagementinternational) {
+        engagementinternational.set('checked', json.engagementinternational ? true : false);
+    }
 
     if (!M.availability_forummetric.form.addedEvents) {
         M.availability_forummetric.form.addedEvents = true;
         initiatedateinputevent(node, 'fromdate');
         initiatedateinputevent(node, 'todate');
+        initiateengagementevent(node);
         const root = Y.one('.availability-field');
         root.delegate('change', () => {
             M.core_availability.form.update();
@@ -125,6 +143,7 @@ M.availability_forummetric.form.fillValue = function(value, node) {
     const todateEnableElement = node.one('input[name=todate_enabled]');
     const todateDateElement = node.one('input[name=todate_date]');
     const todateTimeElement = node.one('input[name=todate_time]');
+    const engagementinternational = node.one('input[name=engagementinternational]');
 
     value.forum = forumElement?.get('value') ?? null;
     value.metric = metricElement?.get('value') ?? null;
@@ -140,6 +159,7 @@ M.availability_forummetric.form.fillValue = function(value, node) {
         date: todateDateElement?.get('value') ?? null,
         time: todateTimeElement?.get('value') ?? null
     };
+    value.engagementinternational = engagementinternational?.get('checked') ?? false;
 };
 
 M.availability_forummetric.form.fillErrors = function(errors, node) {};
